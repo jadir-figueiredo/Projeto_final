@@ -100,7 +100,7 @@ def exibir_janela_cadastro():
          sg.Button("Cancelar", size=(10, 1))]],
          justification='center', )
 
-    layout = [
+    layout_cadastro = [
         [sg.Text("Nome Completo:", font=("SegoeUI", 12)),
          sg.Input(key="-NOME-")],
         [sg.Text("E-mail Válido:", font=("SegoeUI", 12)),
@@ -108,7 +108,7 @@ def exibir_janela_cadastro():
         [botoes]
     ]
 
-    janela_cadastro = sg.Window("Cadastro Biblioteca Lisboa", layout,
+    janela_cadastro = sg.Window("Cadastro Biblioteca Lisboa", layout_cadastro,
                                 resizable=False, size=(500, 150),
                                 finalize=True)
 
@@ -145,50 +145,130 @@ def exibir_janela_cadastro():
         janela_cadastro.un_hide()  # Exibe a janela novamente
 
 
-def realizar_devolucao(titulo, autor, data, genero):
+def devolver_livro(nome, email):
+    # Lê o arquivo "usuarios.xlsx" e verifica se há informações de livro
+    # relacionadas ao usuário atual
+    arquivo_excel = "usuarios.xlsx"
+    planilha_nome = "livro_escolhido"
+    df = pd.read_excel(arquivo_excel, sheet_name=planilha_nome)
+
+    # Filtra as linhas do usuário atual
+    linhas_usuario = df.loc[(df['Nome'] == nome) & (df['Email'] == email)]
+
+    if len(linhas_usuario) == 0 or pd.isna(linhas_usuario['Título'].iloc[0]):
+        sg.popup("Você não possui nenhum livro para devolver.",
+                 non_blocking=True)
+        return
+
+    livros_a_devolver = []
+
+    if len(df) > 0:
+        for index, row in df.iterrows():
+            titulo = row['Título']
+            autor = row['Autor']
+            data = row['Data']
+            genero = row['Gênero']
+
+            devolver = mostrar_informacoes_livro(titulo, autor, data, genero)
+
+            if devolver:
+                livros_a_devolver.append(index)
+
+        if len(livros_a_devolver) > 0:
+            df.loc[livros_a_devolver, 
+                   ['Título', 'Autor', 'Data', 'Gênero']] = ''
+            df.to_excel(arquivo_excel, sheet_name=planilha_nome, index=False)
+            sg.popup("Livro(s) devolvido(s) com sucesso!", non_blocking=True)
+        else:
+            sg.popup("Nenhum livro selecionado para devolver.",
+                     non_blocking=True)
+
+    else:
+        sg.popup("Nenhum livro encontrado.", non_blocking=True)
+
+    # Cria a janela para exibir as informações do livro e a opção de "Devolver"
     layout_devolucao = [
-        [sg.Text("Livro a ser devolvido:", font="SegoeUI")],
         [sg.Text(f"Título: {titulo}")],
         [sg.Text(f"Autor: {autor}")],
         [sg.Text(f"Data: {data}")],
         [sg.Text(f"Gênero: {genero}")],
-        [sg.Button("Devolver", size=(10, 1)), sg.Button("Cancelar",
-                                                        size=(10, 1))]
+        [sg.Button("Devolver")]
     ]
 
-    janela_devolucao = sg.Window("Devolução de Livros", layout_devolucao,
-                                 finalize=True)
+    janela_devolucao = sg.Window("Devolver Livro", layout_devolucao,
+                                 resizable=False, finalize=True)
 
     while True:
-        event_devolucao, _ = janela_devolucao.read()
-
-        if event_devolucao == sg.WINDOW_CLOSED or \
-           event_devolucao == "Cancelar":
+        evento, _ = janela_devolucao.read()
+        if evento == sg.WINDOW_CLOSED:
             break
-        if event_devolucao == "Devolver":
-            # Aqui adiciona a lógica para realizar a devolução do livro,
-            # como atualizar o status do livro, enviar um email de confirmação
-            sg.popup("Livro devolvido com sucesso!")
+
+        if evento == "Devolver":
+            # Remove as informações do livro do arquivo "usuarios.xlsx"
+            filtro = (df['Nome'] == nome) & (df['Email'] == email)
+            colunas = ['Título', 'Autor', 'Data', 'Gênero']
+            # Atribui valores vazios às células correspondentes
+            df.loc[filtro, colunas] = ''
+
+            df.to_excel(arquivo_excel, sheet_name=planilha_nome, index=False)
+
+            sg.popup("Livro devolvido com sucesso!", non_blocking=True)
             break
 
     janela_devolucao.close()
 
 
-def salvar_devolucao(titulo, autor, data, genero, data_devolucao):
-    # Cria um DataFrame com as informações do livro e data de devolução
-    livro_devolvido = pd.DataFrame({
-        'Título': [titulo],
-        'Autor': [autor],
-        'Data': [data],
-        'Gênero': [genero],
-        'Data Devolução': [data_devolucao]
-    })
+def adicionar_livro_escolhido(nome, email, titulo, autor, data, genero):
+    # Cria um DataFrame com as informações do livro
+    livro = {
+        'Nome': nome,
+        'Email': email,
+        'Título': titulo,
+        'Autor': autor,
+        'Data': data,
+        'Gênero': genero
+    }
 
-    # Salva o DataFrame no arquivo Excel
+    # Salva o DataFrame na planilha "usuarios.xlsx"
+    arquivo_excel = "usuarios.xlsx"
+    planilha_nome = "livro_escolhido"
+
     try:
-        usuarios_df = pd.read_excel('usuarios.xlsx')
-        usuarios_df = usuarios_df.append(livro_devolvido, ignore_index=True)
+        df = pd.read_excel(arquivo_excel, sheet_name=planilha_nome)
+        df = pd.concat([df, pd.DataFrame([livro])], ignore_index=True)
     except FileNotFoundError:
-        usuarios_df = livro_devolvido
+        df = pd.DataFrame([livro],
+                          columns=["Nome",
+                                   "Email",
+                                   "Título",
+                                   "Autor",
+                                   "Data",
+                                   "Gênero"])
+        print("Arquivo 'usuarios.xlsx' não encontrado.\
+              Verifique se o arquivo existe.")
 
-    usuarios_df.to_excel('usuarios.xlsx', index=False)
+    df.to_excel(arquivo_excel, sheet_name=planilha_nome, index=False)
+
+
+def mostrar_informacoes_livro(titulo, autor, data, genero):
+    layout_confirma_dev = [
+        [sg.Text(f"Título: {titulo}")],
+        [sg.Text(f"Autor: {autor}")],
+        [sg.Text(f"Data: {data}")],
+        [sg.Text(f"Gênero: {genero}")],
+        [sg.Button("Confirmar")]
+    ]
+
+    janela_confirma_dev = sg.Window("Informações do Livro",
+                                    layout_confirma_dev, finalize=True,
+                                    resizable=False, size=(500, 150))
+
+    while True:
+        evento, valores = janela_confirma_dev.read()
+
+        if evento == sg.WINDOW_CLOSED:
+            return False
+        elif evento == "Confirmar":
+            return valores["-DEVOLVER-"]
+
+    janela_confirma_dev.close()

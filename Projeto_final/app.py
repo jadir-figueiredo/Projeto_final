@@ -13,8 +13,8 @@ from livros import tabela_livros
 from funcoes import (
     cadastrar_usario, validar_email,
     verificar_usuario, verificar_usuario_cadastrado,
-    exibir_janela_cadastro, realizar_devolucao,
-    salvar_devolucao
+    exibir_janela_cadastro, devolver_livro,
+    adicionar_livro_escolhido
     )
 
 # Importa a função de enviar email
@@ -37,7 +37,7 @@ botoes = sg.Column([
      sg.Button("Cancelar", size=(10, 1))]],
      justification='center', )
 
-layout = [
+layout_cadastro = [
     [sg.Text("Nome Completo:", font=("SegoeUI", 12)),
      sg.Input(key="-NOME-")],
     [sg.Text("E-mail Válido:", font=("SegoeUI", 12)),
@@ -45,7 +45,7 @@ layout = [
     [botoes]
 ]
 
-janela_cadastro = sg.Window("Cadastro Biblioteca Lisboa", layout,
+janela_cadastro = sg.Window("Cadastro Biblioteca Lisboa", layout_cadastro,
                             resizable=False, size=(500, 150), finalize=True)
 
 while True:
@@ -75,11 +75,16 @@ while True:
         else:
             sg.popup("Usuário não encontrado!")
     elif event == "Devolução":
-        realizar_devolucao(
-            "Titulo",
-            "Autor",
-            "Data",
-            "Genero")
+        nome = values["-NOME-"].strip()
+        email = values["-EMAIL-"].strip()
+        if not nome or not email:
+            sg.popup("Preencha todos os campos!")
+        elif not validar_email(email):
+            sg.popup("Email inválido!")
+        elif not verificar_usuario(nome, email):
+            sg.popup("Usuário não encontrado.")
+        else:
+            devolver_livro(nome, email)
 
     janela_cadastro["-NOME-"].update("")
     janela_cadastro["-EMAIL-"].update("")
@@ -152,16 +157,13 @@ while True:
             autor = livro_escolhido[0][1]
             data = livro_escolhido[0][2]
             genero = livro_escolhido[0][3]
+            indice = linhas_selecionadas[0]
+            livro = tabela_livros[indice]
+            adicionar_livro_escolhido(nome_verificar, email_verificar,
+                                      titulo, autor, data, genero)
             mensagem = (f"Livro escolhido: "
                         f"{titulo}, {autor}, {data}, {genero}\n"
                         f"Prazo de devolução são de 07 dias.")
-
-            realizar_devolucao(titulo, autor, data, genero)
-            salvar_devolucao(titulo, autor, data, genero, data_devolucao_str)
-            # Atualiza o texto  com as informações do livro a ser devolvido
-            texto_devolucao.update(
-                f"Livro a ser devolvido: {titulo}, {autor}, {data}, {genero}"
-                )
 
             result = sg.popup_ok_cancel(mensagem)
 
