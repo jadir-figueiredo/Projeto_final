@@ -13,7 +13,8 @@ from livros import tabela_livros
 from funcoes import (
     cadastrar_usario, validar_email,
     verificar_usuario, verificar_usuario_cadastrado,
-    exibir_janela_cadastro
+    exibir_janela_cadastro, realizar_devolucao,
+    salvar_devolucao
     )
 
 # Importa a função de enviar email
@@ -73,6 +74,12 @@ while True:
             break
         else:
             sg.popup("Usuário não encontrado!")
+    elif event == "Devolução":
+        realizar_devolucao(
+            "Titulo",
+            "Autor",
+            "Data",
+            "Genero")
 
     janela_cadastro["-NOME-"].update("")
     janela_cadastro["-EMAIL-"].update("")
@@ -119,7 +126,7 @@ janela_escolha_livros = sg.Window("Biblioteca Lisboa", layout, resizable=False,
 janela_escolha_livros.Maximize()
 
 # Indica que o livro foi devolvido inicialmente
-livro_devolvido = False
+livro_devolvido = True
 
 while True:
     # Lê os eventos e os valores dos elementos da janela
@@ -127,6 +134,10 @@ while True:
     if evento == sg.WINDOW_CLOSED or evento == "Cancelar":
         break
     elif evento == "Escolher":
+        livro_devolvido = False
+        if verificar_usuario_cadastrado(nome_verificar, email_verificar):
+            # Define como True para permitir a escolha de um livro
+            livro_devolvido = True
         if not livro_devolvido:
             sg.popup("Você deve devolver o livro antes de escolher outro.")
             continue
@@ -145,9 +156,12 @@ while True:
                         f"{titulo}, {autor}, {data}, {genero}\n"
                         f"Prazo de devolução são de 07 dias.")
 
+            realizar_devolucao(titulo, autor, data, genero)
+            salvar_devolucao(titulo, autor, data, genero, data_devolucao_str)
             # Atualiza o texto  com as informações do livro a ser devolvido
-            texto_devolucao.update(f"Livro a ser devolvido: "
-                                   f"{titulo}, {autor}, {data}, {genero}")
+            texto_devolucao.update(
+                f"Livro a ser devolvido: {titulo}, {autor}, {data}, {genero}"
+                )
 
             result = sg.popup_ok_cancel(mensagem)
 

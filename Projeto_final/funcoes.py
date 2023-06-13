@@ -143,3 +143,52 @@ def exibir_janela_cadastro():
         janela_cadastro["-EMAIL-"].update("")
         janela_cadastro.finalize()  # Finaliza a janela para permitir operações
         janela_cadastro.un_hide()  # Exibe a janela novamente
+
+
+def realizar_devolucao(titulo, autor, data, genero):
+    layout_devolucao = [
+        [sg.Text("Livro a ser devolvido:", font="SegoeUI")],
+        [sg.Text(f"Título: {titulo}")],
+        [sg.Text(f"Autor: {autor}")],
+        [sg.Text(f"Data: {data}")],
+        [sg.Text(f"Gênero: {genero}")],
+        [sg.Button("Devolver", size=(10, 1)), sg.Button("Cancelar",
+                                                        size=(10, 1))]
+    ]
+
+    janela_devolucao = sg.Window("Devolução de Livros", layout_devolucao,
+                                 finalize=True)
+
+    while True:
+        event_devolucao, _ = janela_devolucao.read()
+
+        if event_devolucao == sg.WINDOW_CLOSED or \
+           event_devolucao == "Cancelar":
+            break
+        if event_devolucao == "Devolver":
+            # Aqui adiciona a lógica para realizar a devolução do livro,
+            # como atualizar o status do livro, enviar um email de confirmação
+            sg.popup("Livro devolvido com sucesso!")
+            break
+
+    janela_devolucao.close()
+
+
+def salvar_devolucao(titulo, autor, data, genero, data_devolucao):
+    # Cria um DataFrame com as informações do livro e data de devolução
+    livro_devolvido = pd.DataFrame({
+        'Título': [titulo],
+        'Autor': [autor],
+        'Data': [data],
+        'Gênero': [genero],
+        'Data Devolução': [data_devolucao]
+    })
+
+    # Salva o DataFrame no arquivo Excel
+    try:
+        usuarios_df = pd.read_excel('usuarios.xlsx')
+        usuarios_df = usuarios_df.append(livro_devolvido, ignore_index=True)
+    except FileNotFoundError:
+        usuarios_df = livro_devolvido
+
+    usuarios_df.to_excel('usuarios.xlsx', index=False)
