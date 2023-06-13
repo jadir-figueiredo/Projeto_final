@@ -143,4 +143,3 @@ def exibir_janela_cadastro():
         janela_cadastro["-EMAIL-"].update("")
         janela_cadastro.finalize()  # Finaliza a janela para permitir operações
         janela_cadastro.un_hide()  # Exibe a janela novamente
-        

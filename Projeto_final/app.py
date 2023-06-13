@@ -90,7 +90,7 @@ header = ["Título", "Autor", "Data", "Gênero"]
 
 # Cria uma tabela com os valores e cabeçalhos especificados
 tabela = sg.Table(values=dados_livros, headings=header,
-                  justification="left", key="-TABLE-",
+                  justification="center", key="-TABLE-",
                   select_mode=sg.TABLE_SELECT_MODE_BROWSE,
                   enable_events=True, col_widths=[30, 20, 12, 15, 10],
                   num_rows=len(dados_livros), bind_return_key=True,
@@ -105,7 +105,7 @@ botoes = sg.Column([
 # Adiciona um elemento para exibir a informação do livro a ser devolvido
 texto_devolucao = sg.Text("Livro a ser devolvido: ", font="SegoeUI")
 
-# Define o layout da janela 
+# Define o layout da janela
 layout = [
     [sg.Text("Escolha seu livro", font="SegoeUI")],
     [texto_devolucao],
