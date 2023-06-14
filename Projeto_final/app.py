@@ -40,7 +40,7 @@ botoes = sg.Column([
 layout_cadastro = [
     [sg.Text("Nome Completo:", font=("SegoeUI", 12)),
      sg.Input(key="-NOME-")],
-    [sg.Text("E-mail Válido:", font=("SegoeUI", 12)),
+    [sg.Text("Email Válido:", font=("SegoeUI", 12)),
      sg.Input(key="-EMAIL-")],
     [botoes]
 ]
