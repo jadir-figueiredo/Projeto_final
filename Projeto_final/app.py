@@ -11,10 +11,9 @@ from livros import tabela_livros
 
 # Importa as funções de acesso
 from funcoes import (
-    cadastrar_usario, validar_email,
+    cadastrar_usuario, validar_email,
     verificar_usuario, verificar_usuario_cadastrado,
-    exibir_janela_cadastro, devolver_livro,
-    adicionar_livro_escolhido
+    devolver_livro, adicionar_livro_escolhido
     )
 
 # Importa a função de enviar email
@@ -62,7 +61,7 @@ while True:
         elif verificar_usuario_cadastrado(nome_cadastro, email_cadastro):
             sg.popup("Usuário já cadastrado.")
         else:
-            cadastrar_usario(nome_cadastro, email_cadastro)
+            cadastrar_usuario(nome_cadastro, email_cadastro)
             sg.popup("Usuário cadastrado com sucesso!")
     elif event == "Entrar":
         nome_verificar = values["-NOME-"].strip()
@@ -179,7 +178,6 @@ while True:
                 sg.popup("Você recebeu um email confirmando sua escolha,\n"
                          "juntamente com a data da devolução.\n"
                          "BOA LEITURA!")
-                exibir_janela_cadastro()
-                break
+                sys.exit()
 
 janela_escolha_livros.close()

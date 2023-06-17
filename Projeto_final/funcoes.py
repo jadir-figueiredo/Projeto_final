@@ -6,7 +6,7 @@ import smtplib
 from smtplib import SMTPException
 
 
-def cadastrar_usario(nome, email):
+def cadastrar_usuario(nome, email):
     # Cria um DataFrame com os dados do usuário
     df_usuario = pd.DataFrame({"Nome": [nome.lower()],
                                "Email": [email.lower()]})
@@ -91,60 +91,6 @@ def enviar_email(destinatario, assunto, corpo):
         print(f"Erro ao enviar email: {erro}")
 
 
-def exibir_janela_cadastro():
-
-    botoes = sg.Column([
-        [sg.Button("Entrar", size=(10, 1)),
-         sg.Button("Cadastrar", size=(10, 1)),
-         sg.Button("Devolução", size=(10, 1)),
-         sg.Button("Cancelar", size=(10, 1))]],
-         justification='center', )
-
-    layout_cadastro = [
-        [sg.Text("Nome Completo:", font=("SegoeUI", 12)),
-         sg.Input(key="-NOME-")],
-        [sg.Text("E-mail Válido:", font=("SegoeUI", 12)),
-         sg.Input(key="-EMAIL-")],
-        [botoes]
-    ]
-
-    janela_cadastro = sg.Window("Cadastro Biblioteca Lisboa", layout_cadastro,
-                                resizable=False, size=(500, 150),
-                                finalize=True)
-
-    while True:
-        event, values = janela_cadastro.read()
-        if event in (sg.WIN_CLOSED, "Cancelar"):
-            sys.exit()
-        if event == "Cadastrar":
-            nome_cadastro = values["-NOME-"].strip()
-            email_cadastro = values["-EMAIL-"].strip()
-            if not nome_cadastro or not email_cadastro:
-                sg.popup("Preencha todos os campos!")
-            elif not validar_email(email_cadastro):
-                sg.popup("Email inválido!")
-            elif verificar_usuario_cadastrado(nome_cadastro, email_cadastro):
-                sg.popup("Usuário já cadastrado.")
-            else:
-                cadastrar_usario(nome_cadastro, email_cadastro)
-                sg.popup("Usuário cadastrado com sucesso!")
-        elif event == "Entrar":
-            nome_verificar = values["-NOME-"].strip()
-            email_verificar = values["-EMAIL-"].strip()
-            if not nome_verificar or not email_verificar:
-                sg.popup("Preencha todos os campos!")
-            elif verificar_usuario(nome_verificar, email_verificar):
-                janela_cadastro.close()
-                break
-            else:
-                sg.popup("Usuário não encontrado!")
-
-        janela_cadastro["-NOME-"].update("")
-        janela_cadastro["-EMAIL-"].update("")
-        janela_cadastro.finalize()  # Finaliza a janela para permitir operações
-        janela_cadastro.un_hide()  # Exibe a janela novamente
-
-
 def devolver_livro(nome, email):
     # Lê o arquivo "usuarios.xlsx" e verifica se há informações de livro
     # relacionadas ao usuário atual
@@ -161,29 +107,21 @@ def devolver_livro(nome, email):
 
     livros_a_devolver = []
 
-    if len(df) > 0:
-        for index, row in linhas_usuario.iterrows():
-            titulo = row['Título']
-            autor = row['Autor']
-            data = row['Data']
-            genero = row['Gênero']
+    for index, row in linhas_usuario.iterrows():
+        titulo = row['Título']
+        autor = row['Autor']
+        data = row['Data']
+        genero = row['Gênero']
 
-            # devolver = mostrar_informacoes_livro(titulo, autor, data, genero)
-
-            # if devolver:
-            livros_a_devolver.append(index)
+        livros_a_devolver.append(index)
 
         if len(livros_a_devolver) > 0:
             df.loc[livros_a_devolver,
                    ['Título', 'Autor', 'Data', 'Gênero']] = ''
             df.to_excel(arquivo_excel, sheet_name=planilha_nome, index=False)
-            sg.popup("Livro(s) devolvido(s) com sucesso!", non_blocking=True)
         else:
             sg.popup("Nenhum livro selecionado para devolver.",
-                     non_blocking=True)
-
-    else:
-        sg.popup("Nenhum livro encontrado.", non_blocking=True)
+                     keep_on_top=True, non_blocking=True)
 
     # Cria a janela para exibir as informações do livro e a opção de "Devolver"
     layout_devolucao = [
@@ -212,14 +150,15 @@ def devolver_livro(nome, email):
 
             df.to_excel(arquivo_excel, sheet_name=planilha_nome, index=False)
 
-            sg.popup("Livro devolvido com sucesso!", non_blocking=True)
-
             # enviar_email de aviso de devolução
-            corpo_dev = f"P {titulo}, foi devolvido com sucesso"
-            destinatario_dev = ["Email"]
+            corpo_dev = f"O {titulo}, foi devolvido com sucesso"
+            destinatario_dev = email
             enviar_email(destinatario_dev, "Livro devolvido", corpo_dev)
 
-            break
+            sg.popup("Livro devolvido com sucesso!",
+                     keep_on_top=True, non_blocking=True)
+
+            sys.exit()
 
     janela_devolucao.close()
 
