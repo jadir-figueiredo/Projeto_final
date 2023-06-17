@@ -168,10 +168,10 @@ def devolver_livro(nome, email):
             data = row['Data']
             genero = row['Gênero']
 
-            devolver = mostrar_informacoes_livro(titulo, autor, data, genero)
+            # devolver = mostrar_informacoes_livro(titulo, autor, data, genero)
 
-            if devolver:
-                livros_a_devolver.append(index)
+            # if devolver:
+            livros_a_devolver.append(index)
 
         if len(livros_a_devolver) > 0:
             df.loc[livros_a_devolver,
@@ -191,7 +191,8 @@ def devolver_livro(nome, email):
         [sg.Text(f"Autor: {autor}")],
         [sg.Text(f"Data: {data}")],
         [sg.Text(f"Gênero: {genero}")],
-        [sg.Button("Devolver")]
+        [sg.Button("Devolver")],
+        [sg.Button("Cancelar")],
     ]
 
     janela_devolucao = sg.Window("Devolver Livro", layout_devolucao,
@@ -199,7 +200,7 @@ def devolver_livro(nome, email):
 
     while True:
         evento, _ = janela_devolucao.read()
-        if evento == sg.WINDOW_CLOSED:
+        if evento == sg.WINDOW_CLOSED or evento == "Cancelar":
             break
 
         if evento == "Devolver":
@@ -212,6 +213,12 @@ def devolver_livro(nome, email):
             df.to_excel(arquivo_excel, sheet_name=planilha_nome, index=False)
 
             sg.popup("Livro devolvido com sucesso!", non_blocking=True)
+
+            # enviar_email de aviso de devolução
+            corpo_dev = f"P {titulo}, foi devolvido com sucesso"
+            destinatario_dev = ["Email"]
+            enviar_email(destinatario_dev, "Livro devolvido", corpo_dev)
+
             break
 
     janela_devolucao.close()
@@ -234,8 +241,20 @@ def adicionar_livro_escolhido(nome, email, titulo, autor, data, genero):
 
     try:
         df = pd.read_excel(arquivo_excel, sheet_name=planilha_nome)
-        df = pd.concat([df, pd.DataFrame([livro])], ignore_index=True)
+        # Verifica se já existe uma linha com o mesmo nome e email
+        linha_existente = df[(df["Nome"] == nome) & (df["Email"] == email)]
+
+        if linha_existente.empty:
+            # Adiciona uma nova linha ao DataFrame
+            df = pd.concat([df, pd.DataFrame([livro])], ignore_index=True)
+
+        else:
+            # Atualiza a linha existente com as informações do livro
+            indice = linha_existente.index[0]
+            df.loc[indice] = livro
+
     except FileNotFoundError:
+
         df = pd.DataFrame([livro],
                           columns=["Nome",
                                    "Email",
@@ -275,43 +294,11 @@ def mostrar_informacoes_livro(titulo, autor, data, genero):
             return False
         elif evento == "Devolver":
             janela_confirma_dev.close()
-            notificar_devolucao_livro(
+            enviar_email(
                 destinatario=["-EMAIL-"],
                 assunto="Informações do Livro",
-                corpo=(f"O livro {titulo} foi devolvido com sucesso."))
+                corpo=f"O livro {titulo} foi devolvido com sucesso."
+                )
             return True
 
     janela_confirma_dev.close()
-
-
-def notificar_devolucao_livro(destinatario, assunto, corpo):
-    # Configurações do remetente e servidor SMTP
-    remetente = "projetofinal.python@gmail.com"
-    senha = "ozcgrtuowtzcnuka"
-    servidor_smtp = "smtp.gmail.com"
-    porta_smtp = 587
-
-    # Constrói a mensagem de e-mail
-    mensagem = (f"Subject: {assunto}\n\n{corpo}")
-
-    try:
-        # Estabelece uma conexão com o servidor SMTP
-        with smtplib.SMTP(servidor_smtp, porta_smtp) as servidor:
-            # Inicia a criptografia da conexão
-            servidor.starttls()
-
-            # Realiza a autenticação no servidor
-            servidor.login(remetente, senha)
-
-            # Codifica a mensagem para utf-8
-            mensagem = mensagem.encode("utf-8")
-
-            # Envia o e-mail
-            servidor.sendmail(remetente, destinatario, mensagem)
-
-            # Exibe mensagem de sucesso
-            print("Email enviado com sucesso!")
-
-    except SMTPException as erro:
-        # Trata exceções que possam ocorrer durante o envio
-        print(f"Erro ao enviar email: {erro}")
