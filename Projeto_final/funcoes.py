@@ -42,8 +42,6 @@ def verificar_usuario(nome, email):
     except FileNotFoundError:
         pass
 
-    return False  # Se o usuário não for encontrado
-
 
 def verificar_usuario_cadastrado(nome, email):
     try:
@@ -151,13 +149,12 @@ def devolver_livro(nome, email):
             df.to_excel(arquivo_excel, sheet_name=planilha_nome, index=False)
 
             # enviar_email de aviso de devolução
-            corpo_dev = f"O {titulo}, foi devolvido com sucesso"
+            corpo_dev = f"O livro {titulo}, foi devolvido com sucesso"
             destinatario_dev = email
             enviar_email(destinatario_dev, "Livro devolvido", corpo_dev)
 
             sg.popup("Livro devolvido com sucesso!",
                      keep_on_top=True, non_blocking=True)
-
             sys.exit()
 
     janela_devolucao.close()
@@ -232,12 +229,10 @@ def mostrar_informacoes_livro(titulo, autor, data, genero):
             janela_confirma_dev.close()
             return False
         elif evento == "Devolver":
-            janela_confirma_dev.close()
             enviar_email(
                 destinatario=["-EMAIL-"],
                 assunto="Informações do Livro",
                 corpo=f"O livro {titulo} foi devolvido com sucesso."
                 )
             return True
-
-    janela_confirma_dev.close()
+        break
